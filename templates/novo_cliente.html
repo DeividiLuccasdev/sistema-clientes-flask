@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Novo Cliente</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<div class="form-container">
+
+    <h1>Novo Cliente</h1>
+    {% if erro %}
+    <p class="mensagem-erro">{{ erro }}</p>
+{% endif %}
+    <p>Preencha os dados abaixo</p>
+
+    <form method="POST">
+
+        <label>Nome</label>
+        <input
+    input 
+    type="text"
+    name="nome"
+    value="{{ nome or '' }}"
+    required
+>
+
+        <label>Telefone</label>
+  <input
+    type="text"
+    name="telefone"
+    id="telefone"
+    maxlength="15"
+    value="{{ telefone or '' }}"
+    required
+>
+
+        <label>E-mail</label>
+       <input
+    type="email"
+    name="email"
+    value="{{ email or '' }}"
+    required
+>     
+
+        <label>CPF</label>
+        <input
+    type="text"
+    name="cpf"
+    id="cpf"
+    maxlength="14"
+    value="{{ cpf or '' }}"
+    required
+    
+>
+<label>Data de Nascimento</label>
+
+<input
+    type="text"
+    name="data_nascimento"
+    id="data_nascimento"
+    maxlength="10"
+    placeholder="DD/MM/AAAA"
+    value="{{ data_nascimento or '' }}"
+    required
+>
+
+        <label>Cidade</label>
+        <input
+    type="text"
+    name="cidade"
+    value="{{ cidade or '' }}"
+    required
+>
+
+        <div class="acoes-form">
+
+            <button type="submit">
+                Salvar Cliente
+            </button>
+
+            <a href="/">
+                <button type="button" class="btn-voltar">
+                    Voltar
+                </button>
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+<script>
+    const dataNascimento = document.getElementById("data_nascimento");
+
+dataNascimento.addEventListener("input", function () {
+    let valor = dataNascimento.value.replace(/\D/g, "");
+
+    valor = valor.replace(/(\d{2})(\d)/, "$1/$2");
+    valor = valor.replace(/(\d{2})(\d)/, "$1/$2");
+
+    dataNascimento.value = valor;
+});
+const telefone = document.getElementById("telefone");
+const cpf = document.getElementById("cpf");
+
+telefone.addEventListener("input", function () {
+    let valor = telefone.value.replace(/\D/g, "");
+
+    valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2");
+    valor = valor.replace(/(\d{5})(\d)/, "$1-$2");
+
+    telefone.value = valor;
+});
+
+cpf.addEventListener("input", function () {
+    let valor = cpf.value.replace(/\D/g, "");
+
+    valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+    valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+    valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+
+    cpf.value = valor;
+});
+</script>
+
+</body>
+<div class="menu-topo">
+    <a href="/">Clientes Cadastrados</a>
+    <a href="/novo">+ Novo Cliente</a>
+</div>
+</html>
