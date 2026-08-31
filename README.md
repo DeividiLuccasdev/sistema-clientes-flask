@@ -70,7 +70,38 @@ python app.py
 Acesse no navegador:
 
 http://127.0.0.1:5000
+## 🗄️ Configuração do banco de dados
 
+Crie o banco de dados:
+
+```sql
+CREATE DATABASE sistema_clientes;
+USE sistema_clientes;
+CREATE TABLE clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    email VARCHAR(100),
+    cpf VARCHAR(14),
+    cidade VARCHAR(100),
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME NULL,
+    data_nascimento DATE NULL
+);
+CREATE TABLE historico_exclusoes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    cliente_id INT,
+    nome VARCHAR(100),
+    data_exclusao DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=sua_senha_aqui
+DB_NAME=sistema_clientes
+```
 ## 👨‍💻 Autor
 
 Desenvolvido por Deividi Luccas.
