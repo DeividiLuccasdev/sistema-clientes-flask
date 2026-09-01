@@ -2,6 +2,7 @@ import os
 import mysql.connector
 import secrets
 import smtplib
+import time
 from email.message import EmailMessage
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, redirect, session, url_for
@@ -19,17 +20,32 @@ conexao = None
 def verificar_conexao():
     global conexao
 
-    if conexao is None or not conexao.is_connected():
-        conexao = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME"),
-            port=int(os.getenv("DB_PORT", "3306")),
-            connection_timeout=10
-        )
+    try:
+        if conexao is not None and conexao.is_connected():
+            return conexao
+    except mysql.connector.Error:
+        conexao = None
 
-    return conexao
+    for tentativa in range(3):
+        try:
+            conexao = mysql.connector.connect(
+                host=os.getenv("DB_HOST"),
+                user=os.getenv("DB_USER"),
+                password=os.getenv("DB_PASSWORD"),
+                database=os.getenv("DB_NAME"),
+                port=int(os.getenv("DB_PORT", "3306")),
+                connection_timeout=10
+            )
+
+            return conexao
+
+        except mysql.connector.Error as erro:
+            conexao = None
+
+            if tentativa < 2:
+                time.sleep(2)
+            else:
+                raise erro
 def login_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
