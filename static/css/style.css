@@ -761,3 +761,20 @@ body {
     width: 300px;
     flex: none;
 }
+.input-login {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-login span {
+    position: absolute;
+    left: 15px;
+    z-index: 2;
+    font-size: 18px;
+}
+
+.input-login input {
+    width: 100%;
+    padding-left: 45px;
+}
