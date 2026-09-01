@@ -28,6 +28,19 @@ conexao = mysql.connector.connect(
     database=os.getenv("DB_NAME"),
     port=int(os.getenv("DB_PORT", "3306"))
 )
+def verificar_conexao():
+    global conexao
+
+    if not conexao.is_connected():
+        conexao = mysql.connector.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME"),
+            port=int(os.getenv("DB_PORT", "3306"))
+        )
+
+    return conexao
 
 
 def enviar_email_recuperacao(destinatario, link):
@@ -194,6 +207,8 @@ def esqueci_senha():
     if request.method == "POST":
         email = request.form.get("email")
 
+        verificar_conexao()
+
         cursor = conexao.cursor(dictionary=True)
 
         cursor.execute(
@@ -207,6 +222,8 @@ def esqueci_senha():
         if usuario:
             token = secrets.token_urlsafe(32)
             expiracao = datetime.now() + timedelta(minutes=30)
+
+            verificar_conexao()
 
             cursor = conexao.cursor()
 
