@@ -1,46 +1,65 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistema de Clientes</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
 
-    <div class="login-container">
-        <h2>Sistema de Clientes</h2>
-        <p>Acesse sua conta</p>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="login-page">
+
+    <div class="login-card">
+
+        <div class="login-header">
+            <div class="login-icon">👥</div>
+
+            <h1>Sistema de Clientes</h1>
+
+            <p>Gerencie seus clientes de forma simples e eficiente</p>
+        </div>
 
         {% if erro %}
-            <div class="login-erro">
+            <div class="login-error">
                 {{ erro }}
             </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" class="login-form">
+
+            <label>Usuário</label>
+
             <input
                 type="text"
                 name="usuario"
-                placeholder="Usuário"
+                placeholder="Digite seu usuário"
                 required
             >
 
+            <label>Senha</label>
 
             <input
                 type="password"
                 name="senha"
-                placeholder="Senha"
+                placeholder="Digite sua senha"
                 required
             >
 
             <button type="submit">
                 Entrar
             </button>
+
         </form>
-        <p>
-    <a href="/esqueci-senha">Esqueci minha senha</a>
-</p>
+
+        <div class="login-footer">
+            <a href="/esqueci-senha">
+                Esqueci minha senha
+            </a>
+        </div>
+
     </div>
 
 </body>
