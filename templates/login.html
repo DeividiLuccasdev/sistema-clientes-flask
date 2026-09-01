@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema de Clientes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Sistema de Clientes</h2>
+        <p>Acesse sua conta</p>
+
+        {% if erro %}
+            <div class="login-erro">
+                {{ erro }}
+            </div>
+        {% endif %}
+
+        <form method="POST">
+            <input
+                type="text"
+                name="usuario"
+                placeholder="Usuário"
+                required
+            >
+
+
+            <input
+                type="password"
+                name="senha"
+                placeholder="Senha"
+                required
+            >
+
+            <button type="submit">
+                Entrar
+            </button>
+        </form>
+        <p>
+    <a href="/esqueci-senha">Esqueci minha senha</a>
+</p>
+    </div>
+
+</body>
+</html>

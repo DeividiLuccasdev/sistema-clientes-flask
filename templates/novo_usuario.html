@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo Usuário</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Novo Usuário</h1>
+        {% if mensagem %}
+    <p>{{ mensagem }}</p>
+{% endif %}
+
+{% if erro %}
+    <p>{{ erro }}</p>
+{% endif %}
+
+        <form method="POST">
+            <input type="text" name="nome" placeholder="Nome completo" required>
+
+            <input type="text" name="usuario" placeholder="Usuário" required>
+
+            <input type="email" name="email" placeholder="E-mail" required>
+
+            <input type="password" name="senha" placeholder="Senha" required>
+
+            <button type="submit">Cadastrar Usuário</button>
+        </form>
+
+        <a href="/">Voltar</a>
+    </div>
+
+</body>
+</html>

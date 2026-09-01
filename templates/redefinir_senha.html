@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Redefinir Senha</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Redefinir Senha</h1>
+
+        {% if erro %}
+            <p>{{ erro }}</p>
+        {% endif %}
+
+        <form method="POST">
+
+            <input
+                type="password"
+                name="senha"
+                placeholder="Nova senha"
+                required
+            >
+
+            <input
+                type="password"
+                name="confirmar_senha"
+                placeholder="Confirme a nova senha"
+                required
+            >
+
+            <button type="submit">
+                Alterar Senha
+            </button>
+
+        </form>
+
+        <a href="/login">Voltar para o login</a>
+
+    </div>
+
+</body>
+</html>

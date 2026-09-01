@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Recuperar Senha</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>Recuperar Senha</h1>
+
+        <p>Informe o e-mail cadastrado para recuperar o acesso.</p>
+
+        {% if mensagem %}
+            <p>{{ mensagem }}</p>
+        {% endif %}
+
+        {% if erro %}
+            <p>{{ erro }}</p>
+        {% endif %}
+
+        <form method="POST">
+
+            <input
+                type="email"
+                name="email"
+                placeholder="Digite seu e-mail"
+                required
+            >
+
+            <button type="submit">
+                Recuperar Senha
+            </button>
+
+        </form>
+
+        <a href="/login">Voltar para o login</a>
+
+    </div>
+
+</body>
+</html>
