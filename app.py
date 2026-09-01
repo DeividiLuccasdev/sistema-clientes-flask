@@ -13,32 +13,20 @@ load_dotenv(override=True)
 app = Flask(__name__)
 
 app.secret_key = os.getenv("SECRET_KEY", "chave-temporaria-local")
-conexao = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME") ,
-    port=int(os.getenv("DB_PORT", "3306"))
-)
-app.secret_key = os.getenv("SECRET_KEY", "chave-temporaria-local")
 
-conexao = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME"),
-    port=int(os.getenv("DB_PORT", "3306"))
-)
+conexao = None
+
 def verificar_conexao():
     global conexao
 
-    if not conexao.is_connected():
+    if conexao is None or not conexao.is_connected():
         conexao = mysql.connector.connect(
             host=os.getenv("DB_HOST"),
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
             database=os.getenv("DB_NAME"),
-            port=int(os.getenv("DB_PORT", "3306"))
+            port=int(os.getenv("DB_PORT", "3306")),
+            connection_timeout=10
         )
 
     return conexao
@@ -92,7 +80,9 @@ Se você não solicitou a recuperação, ignore este e-mail.
 @app.route("/")
 @login_required
 def inicio():
-  
+
+    verificar_conexao()
+
     busca = request.args.get("busca", "")
 
     cursor = conexao.cursor(dictionary=True)
@@ -177,6 +167,9 @@ def inicio():
 )
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
+    verificar_conexao()
+
     erro = None
 
     if request.method == "POST":
@@ -338,6 +331,8 @@ def novo_usuario():
 
     mensagem = None
     erro = None
+
+    verificar_conexao()
 
     if request.method == "POST":
         nome = request.form.get("nome")
@@ -533,6 +528,7 @@ def editar_cliente(id):
                 cliente=cliente,
                 erro="Data de nascimento inválida. Use DD/MM/AAAA."
             )
+        verificar_conexao()
 
         cursor = conexao.cursor()
 

@@ -957,3 +957,136 @@ body {
 #sugestoes div:hover {
     background: #f2f4f7;
 }
+/* ========================================
+   TELA - CADASTRAR NOVO USUÁRIO
+======================================== */
+
+.novo-usuario-page {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d47a1, #1976d2);
+    padding: 30px 15px;
+}
+
+.novo-usuario-card {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.20);
+}
+
+.novo-usuario-icone {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    border-radius: 18px;
+    background: #e3f2fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+}
+
+.novo-usuario-card h1 {
+    text-align: center;
+    margin: 0 0 10px;
+    color: #1f2937;
+}
+
+.novo-usuario-subtitulo {
+    text-align: center;
+    color: #6b7280;
+    margin-bottom: 30px;
+}
+
+.novo-usuario-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.novo-usuario-form label {
+    font-weight: 600;
+    color: #374151;
+    margin-top: 8px;
+}
+
+.novo-usuario-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 13px 15px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    font-size: 15px;
+    outline: none;
+}
+
+.novo-usuario-form input:focus {
+    border-color: #1976d2;
+    box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.12);
+}
+
+.novo-usuario-form button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 14px;
+    border: none;
+    border-radius: 9px;
+    background: #1976d2;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.novo-usuario-form button:hover {
+    background: #1565c0;
+}
+
+.novo-usuario-voltar {
+    display: block;
+    margin-top: 25px;
+    text-align: center;
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.usuario-erro {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.usuario-sucesso {
+    background: #dcfce7;
+    color: #15803d;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+.tabela-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+td:last-child {
+    white-space: nowrap;
+}
+
+td:last-child a {
+    display: inline-block;
+    margin-right: 6px;
+}
+
+td:last-child button {
+    min-width: 75px;
+}

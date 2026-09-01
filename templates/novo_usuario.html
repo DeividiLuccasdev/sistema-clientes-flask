@@ -1,37 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Novo Usuário</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body>
 
-    <div class="container">
-        <h1>Novo Usuário</h1>
+<body class="novo-usuario-page">
+
+    <div class="novo-usuario-card">
+
+        <div class="novo-usuario-icone">
+            👤
+        </div>
+
+        <h1>Cadastrar Usuário</h1>
+
+        <p class="novo-usuario-subtitulo">
+            Crie um novo usuário para acessar o sistema.
+        </p>
+
         {% if mensagem %}
-    <p>{{ mensagem }}</p>
-{% endif %}
+            <div class="usuario-sucesso">
+                {{ mensagem }}
+            </div>
+        {% endif %}
 
-{% if erro %}
-    <p>{{ erro }}</p>
-{% endif %}
+        {% if erro %}
+            <div class="usuario-erro">
+                {{ erro }}
+            </div>
+        {% endif %}
 
-        <form method="POST">
-            <input type="text" name="nome" placeholder="Nome completo" required>
+        <form method="POST" class="novo-usuario-form">
 
-            <input type="text" name="usuario" placeholder="Usuário" required>
+            <label>Nome completo</label>
+            <input
+                type="text"
+                name="nome"
+                placeholder="Digite o nome completo"
+                required
+            >
 
-            <input type="email" name="email" placeholder="E-mail" required>
+            <label>Usuário</label>
+            <input
+                type="text"
+                name="usuario"
+                placeholder="Digite o nome de usuário"
+                required
+            >
 
-            <input type="password" name="senha" placeholder="Senha" required>
+            <label>E-mail</label>
+            <input
+                type="email"
+                name="email"
+                placeholder="Digite o e-mail"
+                required
+            >
 
-            <button type="submit">Cadastrar Usuário</button>
+            <label>Senha</label>
+            <input
+                type="password"
+                name="senha"
+                placeholder="Digite uma senha"
+                required
+            >
+
+            <button type="submit">
+                👤 Cadastrar Usuário
+            </button>
+
         </form>
 
-        <a href="/">Voltar</a>
+        <a href="/" class="novo-usuario-voltar">
+            ← Voltar para o Dashboard
+        </a>
+
     </div>
 
 </body>
+
 </html>

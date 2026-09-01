@@ -125,6 +125,35 @@ dataNascimento.addEventListener("input", function () {
     valor = valor.replace(/(\d{2})(\d)/, "$1/$2");
 
     dataNascimento.value = valor;
+    if (valor.length === 10) {
+    const partes = valor.split("/");
+
+    const dia = parseInt(partes[0]);
+    const mes = parseInt(partes[1]);
+    const ano = parseInt(partes[2]);
+
+   const nascimento = new Date(ano, mes - 1, dia);
+const hoje = new Date();
+
+hoje.setHours(0, 0, 0, 0);
+nascimento.setHours(0, 0, 0, 0);
+
+if (
+    nascimento.getFullYear() !== ano ||
+    nascimento.getMonth() !== mes - 1 ||
+    nascimento.getDate() !== dia
+) {
+    alert("Data de nascimento inválida.");
+    dataNascimento.value = "";
+    return;
+}
+
+if (nascimento > hoje) {
+    alert("A data de nascimento não pode ser futura.");
+    dataNascimento.value = "";
+    return;
+}
+}
 });
 </script>
 
