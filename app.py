@@ -207,9 +207,9 @@ def esqueci_senha():
     if request.method == "POST":
         email = request.form.get("email")
 
-        verificar_conexao()
+        db = verificar_conexao()
 
-        cursor = conexao.cursor(dictionary=True)
+        cursor = db.cursor(dictionary=True)
 
         cursor.execute(
             "SELECT id, nome, usuario, email FROM usuarios WHERE email = %s AND ativo = TRUE",
@@ -223,9 +223,9 @@ def esqueci_senha():
             token = secrets.token_urlsafe(32)
             expiracao = datetime.now() + timedelta(minutes=30)
 
-            verificar_conexao()
+            db = verificar_conexao()
 
-            cursor = conexao.cursor()
+            cursor = db.cursor()
 
             cursor.execute(
                 """
@@ -237,7 +237,7 @@ def esqueci_senha():
                 (token, expiracao, usuario["id"])
             )
 
-            conexao.commit()
+            db.commit()
             cursor.close()
 
             link = url_for(
