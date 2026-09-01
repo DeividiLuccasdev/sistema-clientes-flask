@@ -44,14 +44,21 @@ def verificar_conexao():
 
 
 def enviar_email_recuperacao(destinatario, link):
-    mensagem = EmailMessage()
+    import requests
 
-    mensagem["Subject"] = "Recuperação de senha - Sistema de Clientes"
-    mensagem["From"] = os.getenv("EMAIL_REMETENTE")
-    mensagem["To"] = destinatario
+    api_key = os.getenv("RESEND_API_KEY")
 
-    mensagem.set_content(
-        f"""
+    resposta = requests.post(
+        "https://api.resend.com/emails",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": "Sistema de Clientes <onboarding@resend.dev>",
+            "to": [destinatario],
+            "subject": "Recuperação de senha - Sistema de Clientes",
+"text": f"""
 Olá,
 
 Recebemos uma solicitação para redefinir sua senha.
@@ -64,14 +71,11 @@ Este link expira em 30 minutos.
 
 Se você não solicitou a recuperação, ignore este e-mail.
 """
+        }
     )
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(
-            os.getenv("EMAIL_REMETENTE"),
-            os.getenv("EMAIL_SENHA_APP")
-        )
-        smtp.send_message(mensagem)
+    if resposta.status_code not in (200, 201):
+        raise Exception(f"Erro ao enviar e-mail: {resposta.text}")
 
 
 # PÁGINA PRINCIPAL E PESQUISA
