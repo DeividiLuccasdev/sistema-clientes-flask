@@ -11,23 +11,35 @@
           href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
-<body>
+<body class="login-page">
 
-    <div class="container">
+    <div class="login-card">
 
-        <h1>Recuperar Senha</h1>
+        <div class="login-header">
+            <div class="login-icon">🔒</div>
 
-        <p>Informe o e-mail cadastrado para recuperar o acesso.</p>
+            <h1>Recuperar Senha</h1>
+
+            <p>
+                Informe o e-mail cadastrado para recuperar o acesso.
+            </p>
+        </div>
 
         {% if mensagem %}
-            <p>{{ mensagem }}</p>
+            <div class="login-success">
+                {{ mensagem }}
+            </div>
         {% endif %}
 
         {% if erro %}
-            <p>{{ erro }}</p>
+            <div class="login-error">
+                {{ erro }}
+            </div>
         {% endif %}
 
-        <form method="POST">
+        <form method="POST" class="login-form">
+
+            <label>E-mail</label>
 
             <input
                 type="email"
@@ -42,7 +54,11 @@
 
         </form>
 
-        <a href="/login">Voltar para o login</a>
+        <div class="login-footer">
+            <a href="/login">
+                ← Voltar para o login
+            </a>
+        </div>
 
     </div>
 

@@ -49,97 +49,84 @@
         </div>
 
 
-        <!-- CARDS DO DASHBOARD -->
-       <div class="cards-dashboard">
+   <div class="cards-dashboard">
 
-            <div class="card card-azul">
-                <h3>Total de Clientes</h3>
-                <p>{{ total_clientes }}</p>
-                <span>Clientes cadastrados</span>
-            </div>
-
-
-            <div class="card card-verde">
-                <h3>Novos</h3>
-                <p>{{ novos_clientes }}</p>
-                <span>Clientes este mês</span>
-            </div>
-
-
-            <div class="card card-laranja">
-                <h3>Atualizações</h3>
-                <p>{{ clientes_atualizados }}</p>
-                <span>Cadastros atualizados</span>
-            </div>
-
-
-            <div class="card card-vermelho">
-                <h3>Remoções</h3>
-                <p>{{ clientes_removidos }}</p>
-                <span>Cadastros removidos</span>
-            </div>
-
+    <div class="card card-azul">
+        <div class="card-icon">👥</div>
+        <div class="card-info">
+            <h3>Total de Clientes</h3>
+            <p>{{ total_clientes }}</p>
+            <span>Clientes cadastrados</span>
         </div>
+    </div>
 
-
-        <!-- PESQUISA -->
-        <div id="pesquisa" class="area-pesquisa">
-
-            <form method="GET" action="/">
-
-                <input
-                    type="text"
-                    id="busca"
-                    name="busca"
-                    placeholder="Pesquisar cliente..."
-                    value="{{ busca or '' }}"
-                    autocomplete="off"
-                    onkeyup="mostrarSugestoes()"
-                >
-
-                <button type="submit">
-                    Pesquisar
-                </button>
-
-                <a href="/">
-                    <button type="button">
-                        Limpar
-                    </button>
-                </a>
-
-                <!-- SUGESTÕES -->
-                <div id="sugestoes"></div>
-
-
-                <!-- LISTA OCULTA USADA PELO AUTOCOMPLETE -->
-                <div id="lista-clientes" style="display: none;">
-
-                    {% for cliente in todos_clientes %}
-
-                        <span class="cliente-autocomplete">
-                            {{ cliente.nome }}
-                        </span>
-
-                    {% endfor %}
-
-                </div>
-
-            </form>
-
+    <div class="card card-verde">
+        <div class="card-icon">＋</div>
+        <div class="card-info">
+            <h3>Novos</h3>
+            <p>{{ novos_clientes }}</p>
+            <span>Clientes este mês</span>
         </div>
+    </div>
 
+    <div class="card card-laranja">
+        <div class="card-icon">★</div>
+        <div class="card-info">
+            <h3>Atualizações</h3>
+            <p>{{ clientes_atualizados }}</p>
+            <span>Cadastros atualizados</span>
+        </div>
+    </div>
 
-        <!-- LISTA DE CLIENTES -->
-        <div class="painel-clientes">
+    <div class="card card-vermelho">
+        <div class="card-icon">▤</div>
+        <div class="card-info">
+            <h3>Remoções</h3>
+            <p>{{ clientes_removidos }}</p>
+            <span>Cadastros removidos</span>
+        </div>
+    </div>
 
-            <h2 id="clientes">
-                Clientes Cadastrados
-            </h2>
+</div>
+<!-- LISTA DE CLIENTES -->
+<div class="painel-clientes">
 
-            <p class="contador">
-                Total de clientes:
-                <strong>{{ clientes|length }}</strong>
-            </p>
+<div class="cabecalho-clientes">
+
+    <h2 id="clientes" class="titulo-clientes">
+        Clientes Cadastrados
+    </h2>
+
+    <div id="pesquisa" class="area-pesquisa">
+
+        <form method="GET" action="/" class="form-pesquisa">
+
+            <input
+                type="text"
+                id="busca"
+                name="busca"
+                value="{{ busca }}"
+                placeholder="Pesquisar cliente..."
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                Pesquisar
+            </button>
+
+            <a href="/" class="btn-limpar">
+                Limpar
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+    <p class="contador">
+        Total de clientes:
+        <strong>{{ clientes|length }}</strong>
+    </p>
 
 
             <table>
