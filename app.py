@@ -5,6 +5,7 @@ import smtplib
 from email.message import EmailMessage
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, redirect, session, url_for
+from functools import wraps
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 load_dotenv(override=True)
@@ -41,6 +42,15 @@ def verificar_conexao():
         )
 
     return conexao
+def login_required(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if "usuario" not in session:
+            return redirect("/login")
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def enviar_email_recuperacao(destinatario, link):
@@ -80,10 +90,9 @@ Se você não solicitou a recuperação, ignore este e-mail.
 
 # PÁGINA PRINCIPAL E PESQUISA
 @app.route("/")
+@login_required
 def inicio():
-    if "usuario" not in session:
-        return redirect("/login")
-
+  
     busca = request.args.get("busca", "")
 
     cursor = conexao.cursor(dictionary=True)
@@ -268,7 +277,8 @@ def esqueci_senha():
     )
 @app.route("/redefinir-senha/<token>", methods=["GET", "POST"])
 def redefinir_senha(token):
-    cursor = conexao.cursor(dictionary=True)
+    db = verificar_conexao()
+    cursor = db.cursor(dictionary=True)
 
     cursor.execute(
         """
@@ -323,9 +333,8 @@ def redefinir_senha(token):
     )
 
 @app.route("/novo-usuario", methods=["GET", "POST"])
+@login_required
 def novo_usuario():
-    if "usuario" not in session:
-        return redirect("/login")
 
     mensagem = None
     erro = None
@@ -368,9 +377,8 @@ def novo_usuario():
 
 # CADASTRAR NOVO CLIENTE
 @app.route("/novo", methods=["GET", "POST"])
+@login_required
 def novo_cliente():
-    if "usuario" not in session:
-        return redirect("/login")
 
     if request.method == "POST":
 
@@ -459,9 +467,8 @@ def novo_cliente():
 
 # EXCLUIR CLIENTE
 @app.route("/excluir/<int:id>")
+@login_required
 def excluir_cliente(id):
-    if "usuario" not in session:
-        return redirect("/login")
 
     cursor = conexao.cursor(dictionary=True)
 
@@ -494,9 +501,8 @@ def excluir_cliente(id):
 
 # EDITAR CLIENTE
 @app.route("/editar/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_cliente(id):
-    if "usuario" not in session:
-        return redirect("/login")
 
     if request.method == "POST":
         nome = request.form["nome"]
