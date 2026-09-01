@@ -97,10 +97,11 @@
         Clientes Cadastrados
     </h2>
 
-    <div id="pesquisa" class="area-pesquisa">
+ <div id="pesquisa" class="area-pesquisa">
 
-        <form method="GET" action="/" class="form-pesquisa">
+    <form method="GET" action="/" class="form-pesquisa">
 
+        <div class="campo-busca">
             <input
                 type="text"
                 id="busca"
@@ -108,21 +109,35 @@
                 value="{{ busca }}"
                 placeholder="Pesquisar cliente..."
                 autocomplete="off"
+                oninput="mostrarSugestoes()"
             >
 
-            <button type="submit">
-                Pesquisar
-            </button>
+            <div id="sugestoes"></div>
 
-            <a href="/" class="btn-limpar">
-                Limpar
-            </a>
+        </div>
 
-        </form>
+        <div style="display: none;">
+
+            {% for cliente in clientes %}
+                <span class="cliente-autocomplete">
+                    {{ cliente.nome }}
+                </span>
+            {% endfor %}
 
     </div>
+    
+        <button type="submit">
+            Pesquisar
+        </button>
+
+        <a href="/" class="btn-limpar">
+            Limpar
+        </a>
+
+    </form>
 
 </div>
+    
     <p class="contador">
         Total de clientes:
         <strong>{{ clientes|length }}</strong>
@@ -208,8 +223,16 @@
 
     </main>
 
-</div>
+    </div>
+<div style="display: none;">
 
+    {% for cliente in clientes %}
+        <span class="cliente-autocomplete">
+            {{ cliente.nome }}
+        </span>
+    {% endfor %}
+
+</div>
 
 <!-- AUTOCOMPLETE -->
 <script>

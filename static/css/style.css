@@ -931,3 +931,29 @@ body {
     z-index: 2;
     user-select: none;
 }
+.campo-busca {
+    position: relative;
+}
+
+#sugestoes {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #d0d5dd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    z-index: 20;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#sugestoes div {
+    padding: 10px 14px;
+    cursor: pointer;
+}
+
+#sugestoes div:hover {
+    background: #f2f4f7;
+}
