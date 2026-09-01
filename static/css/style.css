@@ -789,3 +789,145 @@ body {
     user-select: none;
     z-index: 5;
 }
+/* ========================================
+   TELA REDEFINIR SENHA
+======================================== */
+
+.redefinir-page {
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #071a3d, #0b4da2);
+    font-family: Arial, sans-serif;
+}
+
+.redefinir-card {
+    width: 100%;
+    max-width: 520px;
+    background: #ffffff;
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.redefinir-icone {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #1684ff, #1454d8);
+    font-size: 32px;
+}
+
+.redefinir-card h1 {
+    margin: 0;
+    text-align: center;
+    color: #172033;
+    font-size: 32px;
+}
+
+.redefinir-subtitulo {
+    text-align: center;
+    color: #667085;
+    margin: 12px 0 30px;
+    line-height: 1.5;
+}
+
+.redefinir-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.redefinir-form label {
+    color: #1f2937;
+    font-weight: 600;
+    margin: 0 0 8px;
+}
+
+.redefinir-form input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: 1px solid #d0d5dd;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+}
+
+.redefinir-form input:focus {
+    border-color: #1677ff;
+    box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.12);
+}
+
+.redefinir-form button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #1684ff, #1554d8);
+    color: white;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.redefinir-form button:hover {
+    opacity: 0.92;
+}
+
+.redefinir-voltar {
+    display: block;
+    text-align: center;
+    margin-top: 25px;
+    color: #1677ff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.redefinir-voltar:hover {
+    text-decoration: underline;
+}
+
+.redefinir-erro {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+.redefinir-input {
+    position: relative;
+    width: 100%;
+}
+
+.redefinir-input input {
+    width: 100%;
+    padding-left: 48px;
+    padding-right: 50px;
+    box-sizing: border-box;
+}
+
+.redefinir-cadeado {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 2;
+}
+
+.redefinir-olho {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 2;
+    user-select: none;
+}
