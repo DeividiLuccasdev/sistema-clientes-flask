@@ -46,14 +46,18 @@
 
             <label>Senha</label>
 
-   <div class="input-login">
+    <div class="input-login">
     <span>🔒</span>
+
     <input
         type="password"
+        id="senha"
         name="senha"
         placeholder="Digite sua senha"
         required
     >
+
+    <span class="ver-senha" onclick="mostrarSenha()">👁️</span>
     </div>
 
             <button type="submit">
@@ -66,9 +70,19 @@
             <a href="/esqueci-senha">
                 Esqueci minha senha
             </a>
+           
         </div>
+    <script>
+function mostrarSenha() {
+    const senha = document.getElementById("senha");
 
-    </div>
+    if (senha.type === "password") {
+        senha.type = "text";
+    } else {
+        senha.type = "password";
+    }
+}
+</script>
 
 </body>
 </html>

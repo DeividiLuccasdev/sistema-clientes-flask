@@ -778,3 +778,14 @@ body {
     width: 100%;
     padding-left: 45px;
 }
+.ver-senha {
+    position: absolute !important;
+    left: auto !important;
+    right: 18px !important;
+    top: 50% !important;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 20px;
+    user-select: none;
+    z-index: 5;
+}
