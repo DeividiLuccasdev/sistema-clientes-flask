@@ -10,6 +10,8 @@ from functools import wraps
 
 
 
+import click
+
 import mysql.connector
 
 from dotenv import load_dotenv
@@ -646,6 +648,22 @@ def logout():
 
 
 
+# Endereço público usado nos links enviados por e-mail (ex.: https://seu-app.onrender.com).
+# Com APP_URL definido, o link não depende do cabeçalho Host da requisição,
+# que pode ser alterado por quem pede a recuperação de senha.
+APP_URL = os.getenv("APP_URL", "").rstrip("/")
+
+
+def montar_link_publico(caminho):
+    if APP_URL:
+        return APP_URL + caminho
+
+    app.logger.warning(
+        "APP_URL não configurado: o link de recuperação usa o endereço da requisição."
+    )
+    return request.url_root.rstrip("/") + caminho
+
+
 @app.route("/esqueci-senha", methods=["GET", "POST"])
 
 def esqueci_senha():
@@ -748,7 +766,9 @@ def esqueci_senha():
 
 
 
-            link = url_for("redefinir_senha", token=token, _external=True)
+            link = montar_link_publico(
+                url_for("redefinir_senha", token=token)
+            )
 
 
 
@@ -1262,6 +1282,39 @@ def editar_cliente(id):
         abort(404)
 
     return render_template("editar_cliente.html", cliente=cliente)
+
+
+# CRIAR USUÁRIO PELO TERMINAL
+# Como a tela "Novo usuário" exige login, o primeiro acesso é criado com:
+#   flask --app app criar-usuario
+@app.cli.command("criar-usuario")
+@click.option("--nome", prompt="Nome")
+@click.option("--usuario", prompt="Usuário")
+@click.option("--email", prompt="E-mail")
+@click.password_option("--senha", prompt="Senha", confirmation_prompt="Confirme a senha")
+def criar_usuario(nome, usuario, email, senha):
+    if len(senha) < 8:
+        raise click.ClickException("A senha deve ter pelo menos 8 caracteres.")
+
+    db = obter_conexao()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute(
+            """
+            INSERT INTO usuarios (nome, usuario, email, senha, ativo)
+            VALUES (%s, %s, %s, %s, TRUE)
+            """,
+            (nome.strip(), usuario.strip(), email.strip().lower(), generate_password_hash(senha)),
+        )
+        db.commit()
+    except mysql.connector.IntegrityError:
+        db.rollback()
+        raise click.ClickException("Usuário ou e-mail já cadastrado.")
+    finally:
+        cursor.close()
+
+    click.echo(f"Usuário {usuario.strip()} criado com sucesso.")
 
 
 if __name__ == "__main__":
