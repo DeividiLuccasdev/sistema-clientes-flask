@@ -1,250 +1,167 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Sistema de Clientes</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
-
 <div class="layout">
-
-    <!-- MENU LATERAL -->
     <aside class="sidebar">
-
         <h2>Sistema de Clientes</h2>
-
-    <nav>
-    <a href="/">🏠 Dashboard</a>
-    <a href="#clientes">👥 Clientes</a>
-    <a href="/novo">➕ Novo Cliente</a>
-    <a href="/novo-usuario">👤 Novo Usuário</a>
-    <a href="#pesquisa">🔍 Pesquisar</a>
-    <a href="/logout">🚪 Sair</a>
-    </nav>
-
+        <nav>
+            <a href="/">🏠 Dashboard</a>
+            <a href="#clientes">👥 Clientes</a>
+            <a href="/novo">➕ Novo Cliente</a>
+            <a href="/novo-usuario">👤 Novo Usuário</a>
+            <a href="#pesquisa">🔍 Pesquisar</a>
+            <a href="/logout">🚪 Sair</a>
+        </nav>
     </aside>
 
-
-    <!-- CONTEÚDO PRINCIPAL -->
     <main class="conteudo">
-
         <div class="topo">
-
             <div>
                 <h1>Sistema de Clientes</h1>
                 <p>Gerenciamento de clientes</p>
             </div>
-
-            <a href="/novo" class="btn-novo">
-                + Novo Cliente
-            </a>
-
+            <a href="/novo" class="btn-novo">+ Novo Cliente</a>
         </div>
 
+        <div class="cards-dashboard">
+            <div class="card card-azul">
+                <div class="card-icon">👥</div>
+                <div class="card-info">
+                    <h3>Total de Clientes</h3>
+                    <p>{{ total_clientes }}</p>
+                    <span>Clientes cadastrados</span>
+                </div>
+            </div>
 
-   <div class="cards-dashboard">
+            <div class="card card-verde">
+                <div class="card-icon">＋</div>
+                <div class="card-info">
+                    <h3>Novos</h3>
+                    <p>{{ novos_clientes }}</p>
+                    <span>Clientes este mês</span>
+                </div>
+            </div>
 
-    <div class="card card-azul">
-        <div class="card-icon">👥</div>
-        <div class="card-info">
-            <h3>Total de Clientes</h3>
-            <p>{{ total_clientes }}</p>
-            <span>Clientes cadastrados</span>
-        </div>
-    </div>
+            <div class="card card-laranja">
+                <div class="card-icon">★</div>
+                <div class="card-info">
+                    <h3>Atualizações</h3>
+                    <p>{{ clientes_atualizados }}</p>
+                    <span>Cadastros atualizados</span>
+                </div>
+            </div>
 
-    <div class="card card-verde">
-        <div class="card-icon">＋</div>
-        <div class="card-info">
-            <h3>Novos</h3>
-            <p>{{ novos_clientes }}</p>
-            <span>Clientes este mês</span>
-        </div>
-    </div>
-
-    <div class="card card-laranja">
-        <div class="card-icon">★</div>
-        <div class="card-info">
-            <h3>Atualizações</h3>
-            <p>{{ clientes_atualizados }}</p>
-            <span>Cadastros atualizados</span>
-        </div>
-    </div>
-
-    <div class="card card-vermelho">
-        <div class="card-icon">▤</div>
-        <div class="card-info">
-            <h3>Remoções</h3>
-            <p>{{ clientes_removidos }}</p>
-            <span>Cadastros removidos</span>
-        </div>
-    </div>
-
-</div>
-<!-- LISTA DE CLIENTES -->
-<div class="painel-clientes">
-
-<div class="cabecalho-clientes">
-
-    <h2 id="clientes" class="titulo-clientes">
-        Clientes Cadastrados
-    </h2>
-
- <div id="pesquisa" class="area-pesquisa">
-
-    <form method="GET" action="/" class="form-pesquisa">
-
-        <div class="campo-busca">
-            <input
-                type="text"
-                id="busca"
-                name="busca"
-                value="{{ busca }}"
-                placeholder="Pesquisar cliente..."
-                autocomplete="off"
-                oninput="mostrarSugestoes()"
-            >
-
-            <div id="sugestoes"></div>
-
+            <div class="card card-vermelho">
+                <div class="card-icon">▤</div>
+                <div class="card-info">
+                    <h3>Remoções</h3>
+                    <p>{{ clientes_removidos }}</p>
+                    <span>Cadastros removidos</span>
+                </div>
+            </div>
         </div>
 
-        <div style="display: none;">
+        <div class="painel-clientes">
+            <div class="cabecalho-clientes">
+                <h2 id="clientes" class="titulo-clientes">Clientes Cadastrados</h2>
 
-            {% for cliente in clientes %}
-                <span class="cliente-autocomplete">
-                    {{ cliente.nome }}
-                </span>
-            {% endfor %}
-
-    </div>
-
-        <button type="submit">
-            Pesquisar
-        </button>
-
-        <a href="/" class="btn-limpar">
-            Limpar
-        </a>
-
-    </form>
-
-</div>
-    
-    <p class="contador">
-        Total de clientes:
-        <strong>{{ clientes|length }}</strong>
-    </p>
-<div class="tabela-scroll">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                       <th>ID</th>
-                        <th>Nome</th>
-                        <th>Data de Nascimento</th>
-                        <th>Telefone</th>
-                        <th>E-mail</th>
-                        <th>CPF</th>
-                        <th>Cidade</th>
-                        <th>Ações</th>
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    {% for cliente in clientes %}
-
-                    <tr>
-
-                        <td>{{ cliente.id }}</td>
-
-                        <td class="nome-cliente">
-                            {{ cliente.nome }}
-                        </td>
-
-                       <td>
-                             {% if cliente.data_nascimento %}
-                                 {{ cliente.data_nascimento.strftime('%d/%m/%Y') }}
-                             {% endif %}
-                        </td>
-
-                        <td>{{ cliente.telefone }}</td>
-                        <td>{{ cliente.email }}</td>
-                        <td>{{ cliente.cpf }}</td>
-                        <td>{{ cliente.cidade }}</td>
-
-                        <td>
-
-                            <a href="/editar/{{ cliente.id }}">
-                                <button type="button">
-                                    Editar
-                                </button>
-                            </a>
-
-                            <a
-                                href="/excluir/{{ cliente.id }}"
-                                onclick="return confirm('Tem certeza que deseja excluir este cliente?')"
+                <div id="pesquisa" class="area-pesquisa">
+                    <form method="GET" action="/" class="form-pesquisa">
+                        <div class="campo-busca">
+                            <input
+                                type="text"
+                                id="busca"
+                                name="busca"
+                                value="{{ busca }}"
+                                placeholder="Pesquisar cliente..."
+                                autocomplete="off"
+                                oninput="mostrarSugestoes()"
                             >
-                                <button type="button">
-                                    Excluir
-                                </button>
-                            </a>
+                            <div id="sugestoes"></div>
+                        </div>
 
-                        </td>
+                        <button type="submit">Pesquisar</button>
+                        <a href="/" class="btn-limpar">Limpar</a>
+                    </form>
+                </div>
 
-                    </tr>
+                <p class="contador">
+                    Total de clientes: <strong>{{ clientes|length }}</strong>
+                </p>
 
-                    {% endfor %}
+                <div class="tabela-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Data de Nascimento</th>
+                                <th>Telefone</th>
+                                <th>E-mail</th>
+                                <th>CPF</th>
+                                <th>Cidade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cliente in clientes %}
+                            <tr>
+                                <td>{{ cliente.id }}</td>
+                                <td class="nome-cliente">{{ cliente.nome }}</td>
+                                <td>
+                                    {% if cliente.data_nascimento %}
+                                        {{ cliente.data_nascimento.strftime('%d/%m/%Y') }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ cliente.telefone }}</td>
+                                <td>{{ cliente.email }}</td>
+                                <td>{{ cliente.cpf }}</td>
+                                <td>{{ cliente.cidade }}</td>
+                                <td>
+                                    <a href="/editar/{{ cliente.id }}">
+                                        <button type="button">Editar</button>
+                                    </a>
 
-                </tbody>
+                                    <form
+                                        method="POST"
+                                        action="/excluir/{{ cliente.id }}"
+                                        style="display: inline;"
+                                        onsubmit="return confirm('Tem certeza que deseja excluir este cliente?')"
+                                    >
+                                        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit">Excluir</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
 
-            </table>
-
-            
+                {% if not clientes %}
+                    <p>Nenhum cliente encontrado.</p>
+                {% endif %}
+            </div>
         </div>
-
-
-            {% if not clientes %}
-
-                <p>Nenhum cliente encontrado.</p>
-
-            {% endif %}
-
-        </div>
-
     </main>
-
-    </div>
-<div style="display: none;">
-
-    {% for cliente in clientes %}
-        <span class="cliente-autocomplete">
-            {{ cliente.nome }}
-        </span>
-    {% endfor %}
-
 </div>
 
-<!-- AUTOCOMPLETE -->
+<div style="display: none;">
+    {% for cliente in todos_clientes %}
+        <span class="cliente-autocomplete">{{ cliente.nome }}</span>
+    {% endfor %}
+</div>
+
 <script>
-
 function mostrarSugestoes() {
-
     const campo = document.getElementById("busca");
     const sugestoes = document.getElementById("sugestoes");
-
     const texto = campo.value.toLowerCase().trim();
 
     sugestoes.innerHTML = "";
@@ -253,50 +170,27 @@ function mostrarSugestoes() {
         return;
     }
 
-
     const clientes = [];
 
-    document
-        .querySelectorAll(".cliente-autocomplete")
-        .forEach(function(elemento) {
-
-            clientes.push(
-                elemento.textContent.trim()
-            );
-
-        });
-
-
-    clientes.forEach(function(nome) {
-
-        if (nome.toLowerCase().includes(texto)) {
-
-            const item = document.createElement("div");
-
-            item.textContent = nome;
-
-
-            item.addEventListener("click", function() {
-
-                campo.value = nome;
-
-                sugestoes.innerHTML = "";
-
-                campo.form.submit();
-
-            });
-
-
-            sugestoes.appendChild(item);
-
-        }
-
+    document.querySelectorAll(".cliente-autocomplete").forEach(function(elemento) {
+        clientes.push(elemento.textContent.trim());
     });
 
+    clientes.forEach(function(nome) {
+        if (nome.toLowerCase().includes(texto)) {
+            const item = document.createElement("div");
+            item.textContent = nome;
+
+            item.addEventListener("click", function() {
+                campo.value = nome;
+                sugestoes.innerHTML = "";
+                campo.form.submit();
+            });
+
+            sugestoes.appendChild(item);
+        }
+    });
 }
-
 </script>
-
-
 </body>
 </html>

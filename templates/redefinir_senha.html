@@ -1,102 +1,70 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Redefinir Senha</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
-<script>
-function mostrarNovaSenha() {
-    const campo = document.getElementById("nova-senha");
-
-    if (campo.type === "password") {
-        campo.type = "text";
-    } else {
-        campo.type = "password";
-    }
-}
-
-function mostrarConfirmacaoSenha() {
-    const campo = document.getElementById("confirmar-senha");
-
-    if (campo.type === "password") {
-        campo.type = "text";
-    } else {
-        campo.type = "password";
-    }
-}
-</script>
-   <body class="redefinir-page">
-
+<body class="redefinir-page">
     <div class="redefinir-card">
-
-        <div class="redefinir-icone">
-            🔒
-        </div>
-
+        <div class="redefinir-icone">🔒</div>
         <h1>Redefinir Senha</h1>
-
-        <p class="redefinir-subtitulo">
-            Digite sua nova senha abaixo para recuperar o acesso à sua conta.
-        </p>
+        <p class="redefinir-subtitulo">Digite sua nova senha abaixo para recuperar o acesso à sua conta.</p>
 
         {% if erro %}
-            <div class="redefinir-erro">
-                {{ erro }}
-            </div>
+            <div class="redefinir-erro">{{ erro }}</div>
         {% endif %}
 
         <form method="POST" class="redefinir-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <label>Nova senha</label>
-
-    <div class="redefinir-input">
-        <span class="redefinir-cadeado">🔒</span>
-
-        <input
-        type="password"
-        id="nova-senha"
-        name="senha"
-        placeholder="Digite sua nova senha"
-        required
-    >
-
-        <span class="redefinir-olho" onclick="mostrarNovaSenha()">👁️</span>
-    </div>
+            <div class="redefinir-input">
+                <span class="redefinir-cadeado">🔒</span>
+                <input
+                    type="password"
+                    id="nova-senha"
+                    name="senha"
+                    placeholder="Digite sua nova senha"
+                    minlength="8"
+                    required
+                    autocomplete="new-password"
+                >
+                <span class="redefinir-olho" onclick="mostrarNovaSenha()">👁️</span>
+            </div>
 
             <label>Confirmar nova senha</label>
+            <div class="redefinir-input">
+                <span class="redefinir-cadeado">🔒</span>
+                <input
+                    type="password"
+                    id="confirmar-senha"
+                    name="confirmar_senha"
+                    placeholder="Confirme sua nova senha"
+                    minlength="8"
+                    required
+                    autocomplete="new-password"
+                >
+                <span class="redefinir-olho" onclick="mostrarConfirmacaoSenha()">👁️</span>
+            </div>
 
-           <div class="redefinir-input">
-    <span class="redefinir-cadeado">🔒</span>
-
-    <input
-        type="password"
-        id="confirmar-senha"
-        name="confirmar_senha"
-        placeholder="Confirme sua nova senha"
-        required
-    >
-
-    <span class="redefinir-olho" onclick="mostrarConfirmacaoSenha()">👁️</span>
-    </div>
-
-            <button type="submit">
-                🔒 Alterar Senha
-            </button>
-
+            <button type="submit">🔒 Alterar Senha</button>
         </form>
 
-        <a href="/login" class="redefinir-voltar">
-            Voltar para o login
-        </a>
-
+        <a href="/login" class="redefinir-voltar">Voltar para o login</a>
     </div>
 
+    <script>
+    function mostrarNovaSenha() {
+        const campo = document.getElementById("nova-senha");
+        campo.type = campo.type === "password" ? "text" : "password";
+    }
+
+    function mostrarConfirmacaoSenha() {
+        const campo = document.getElementById("confirmar-senha");
+        campo.type = campo.type === "password" ? "text" : "password";
+    }
+    </script>
 </body>
 </html>

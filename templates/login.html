@@ -1,88 +1,52 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Sistema de Clientes</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body class="login-page">
-
     <div class="login-card">
-
         <div class="login-header">
-       <div class="login-icon">
-    <span class="user-symbol">👥</span>
-</div>
-
+            <div class="login-icon"><span class="user-symbol">👥</span></div>
             <h1>Sistema de Clientes</h1>
-
             <p>Gerencie seus clientes de forma simples e eficiente</p>
         </div>
 
         {% if erro %}
-            <div class="login-error">
-                {{ erro }}
-            </div>
+            <div class="login-error">{{ erro }}</div>
         {% endif %}
 
         <form method="POST" class="login-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <label>Usuário</label>
-
             <div class="input-login">
-    <span>👤</span>
-    <input
-        type="text"
-        name="usuario"
-        placeholder="Digite seu usuário"
-        required
-    >
-    </div>
+                <span>👤</span>
+                <input type="text" name="usuario" placeholder="Digite seu usuário" required autocomplete="username">
+            </div>
 
             <label>Senha</label>
+            <div class="input-login">
+                <span>🔒</span>
+                <input type="password" id="senha" name="senha" placeholder="Digite sua senha" required autocomplete="current-password">
+                <span class="ver-senha" onclick="mostrarSenha()">👁️</span>
+            </div>
 
-    <div class="input-login">
-    <span>🔒</span>
-
-    <input
-        type="password"
-        id="senha"
-        name="senha"
-        placeholder="Digite sua senha"
-        required
-    >
-
-    <span class="ver-senha" onclick="mostrarSenha()">👁️</span>
-    </div>
-
-            <button type="submit">
-                Entrar
-            </button>
-
+            <button type="submit">Entrar</button>
         </form>
 
         <div class="login-footer">
-            <a href="/esqueci-senha">
-                Esqueci minha senha
-            </a>
-           
+            <a href="/esqueci-senha">Esqueci minha senha</a>
         </div>
+    </div>
+
     <script>
-function mostrarSenha() {
-    const senha = document.getElementById("senha");
-
-    if (senha.type === "password") {
-        senha.type = "text";
-    } else {
-        senha.type = "password";
+    function mostrarSenha() {
+        const senha = document.getElementById("senha");
+        senha.type = senha.type === "password" ? "text" : "password";
     }
-}
-</script>
-
+    </script>
 </body>
 </html>

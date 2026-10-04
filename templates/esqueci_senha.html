@@ -1,66 +1,39 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Recuperar Senha</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body class="login-page">
-
     <div class="login-card">
-
         <div class="login-header">
             <div class="login-icon">🔒</div>
-
             <h1>Recuperar Senha</h1>
-
-            <p>
-                Informe o e-mail cadastrado para recuperar o acesso.
-            </p>
+            <p>Informe o e-mail cadastrado para recuperar o acesso.</p>
         </div>
 
         {% if mensagem %}
-            <div class="login-success">
-                {{ mensagem }}
-            </div>
+            <div class="login-success">{{ mensagem }}</div>
         {% endif %}
 
         {% if erro %}
-            <div class="login-error">
-                {{ erro }}
-            </div>
+            <div class="login-error">{{ erro }}</div>
         {% endif %}
 
         <form method="POST" class="login-form">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
             <label>E-mail</label>
+            <input type="email" name="email" placeholder="Digite seu e-mail" required autocomplete="email">
 
-            <input
-                type="email"
-                name="email"
-                placeholder="Digite seu e-mail"
-                required
-            >
-
-            <button type="submit">
-                Recuperar Senha
-            </button>
-
+            <button type="submit">Recuperar Senha</button>
         </form>
 
         <div class="login-footer">
-            <a href="/login">
-                ← Voltar para o login
-            </a>
+            <a href="/login">← Voltar para o login</a>
         </div>
-
     </div>
-
 </body>
 </html>

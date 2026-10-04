@@ -1,162 +1,115 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Cliente</title>
-
-    <link rel="stylesheet"
-          href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
-
-
 <div class="menu-topo">
     <a href="/">Clientes Cadastrados</a>
     <a href="/novo">+ Novo Cliente</a>
 </div>
 
 <div class="form-container">
-
     <h1>Editar Cliente</h1>
+
+    {% if erro %}
+        <p class="mensagem-erro">{{ erro }}</p>
+    {% endif %}
+
     <p>Altere os dados abaixo</p>
 
     <form method="POST">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 
         <label>Nome</label>
+        <input type="text" name="nome" value="{{ cliente.nome }}" required>
+
+        <label>Data de Nascimento</label>
         <input
             type="text"
-            name="nome"
-            value="{{ cliente.nome }}"
+            name="data_nascimento"
+            id="data_nascimento"
+            maxlength="10"
+            placeholder="DD/MM/AAAA"
+            value="{{ cliente.data_nascimento.strftime('%d/%m/%Y') if cliente.data_nascimento else '' }}"
             required
         >
-        <label>Data de Nascimento</label>
-<input
-    type="text"
-    name="data_nascimento"
-    id="data_nascimento"
-    maxlength="10"
-    placeholder="DD/MM/AAAA"
-    value="{{ cliente.data_nascimento.strftime('%d/%m/%Y') if cliente.data_nascimento else '' }}"
->
 
         <label>Telefone</label>
-  <input
-    type="text"
-    name="telefone"
-    id="telefone"
-    maxlength="15"
-    value="{{ cliente.telefone }}"
-    required
->
+        <input type="text" name="telefone" id="telefone" maxlength="15" value="{{ cliente.telefone }}" required>
 
         <label>E-mail</label>
-        <input
-            type="email"
-            name="email"
-            value="{{ cliente.email }}"
-            required
-        >
+        <input type="email" name="email" value="{{ cliente.email }}" required>
+
         <label>CPF</label>
-       <input
-    type="text"
-    name="cpf"
-    id="cpf"
-    maxlength="14"
-    value="{{ cliente.cpf }}"
-    required
->
+        <input type="text" name="cpf" id="cpf" maxlength="14" value="{{ cliente.cpf }}" required>
 
         <label>Cidade</label>
-        <input
-            type="text"
-            name="cidade"
-            value="{{ cliente.cidade }}"
-            required
-        >
+        <input type="text" name="cidade" value="{{ cliente.cidade }}" required>
 
         <div class="acoes-form">
-
-            <button type="submit">
-                Salvar Alterações
-            </button>
-
-            <a href="/">
-                <button type="button" class="btn-voltar">
-                    Voltar
-                </button>
-            </a>
-
+            <button type="submit">Salvar Alterações</button>
+            <a href="/"><button type="button" class="btn-voltar">Voltar</button></a>
         </div>
-
     </form>
-
 </div>
+
 <script>
 const telefone = document.getElementById("telefone");
 const cpf = document.getElementById("cpf");
+const dataNascimento = document.getElementById("data_nascimento");
 
 telefone.addEventListener("input", function () {
     let valor = telefone.value.replace(/\D/g, "");
-
     valor = valor.replace(/^(\d{2})(\d)/g, "($1) $2");
     valor = valor.replace(/(\d{5})(\d)/, "$1-$2");
-
     telefone.value = valor;
 });
 
 cpf.addEventListener("input", function () {
     let valor = cpf.value.replace(/\D/g, "");
-
     valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
     valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
     valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-
     cpf.value = valor;
-    });
-    const dataNascimento = document.getElementById("data_nascimento");
+});
 
 dataNascimento.addEventListener("input", function () {
-    let valor = dataNascimento.value.replace(/\D/g, "");
-
-    valor = valor.substring(0, 8);
+    let valor = dataNascimento.value.replace(/\D/g, "").substring(0, 8);
     valor = valor.replace(/(\d{2})(\d)/, "$1/$2");
     valor = valor.replace(/(\d{2})(\d)/, "$1/$2");
-
     dataNascimento.value = valor;
+
     if (valor.length === 10) {
-    const partes = valor.split("/");
+        const partes = valor.split("/");
+        const dia = parseInt(partes[0]);
+        const mes = parseInt(partes[1]);
+        const ano = parseInt(partes[2]);
+        const nascimento = new Date(ano, mes - 1, dia);
+        const hoje = new Date();
 
-    const dia = parseInt(partes[0]);
-    const mes = parseInt(partes[1]);
-    const ano = parseInt(partes[2]);
+        hoje.setHours(0, 0, 0, 0);
+        nascimento.setHours(0, 0, 0, 0);
 
-   const nascimento = new Date(ano, mes - 1, dia);
-const hoje = new Date();
+        if (
+            nascimento.getFullYear() !== ano ||
+            nascimento.getMonth() !== mes - 1 ||
+            nascimento.getDate() !== dia
+        ) {
+            alert("Data de nascimento inválida.");
+            dataNascimento.value = "";
+            return;
+        }
 
-hoje.setHours(0, 0, 0, 0);
-nascimento.setHours(0, 0, 0, 0);
-
-if (
-    nascimento.getFullYear() !== ano ||
-    nascimento.getMonth() !== mes - 1 ||
-    nascimento.getDate() !== dia
-) {
-    alert("Data de nascimento inválida.");
-    dataNascimento.value = "";
-    return;
-}
-
-if (nascimento > hoje) {
-    alert("A data de nascimento não pode ser futura.");
-    dataNascimento.value = "";
-    return;
-}
-}
+        if (nascimento > hoje) {
+            alert("A data de nascimento não pode ser futura.");
+            dataNascimento.value = "";
+        }
+    }
 });
 </script>
-
 </body>
-
 </html>
