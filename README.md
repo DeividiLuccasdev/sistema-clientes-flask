@@ -69,7 +69,7 @@ python app.py
 
 Acesse no navegador:
 
-http://127.0.0.1:5000
+[Acessar o Sistema de Clientes](https://sistema-clientes-flask-ev90.onrender.com)
 ## 🗄️ Configuração do banco de dados
 
 Crie o banco de dados:
