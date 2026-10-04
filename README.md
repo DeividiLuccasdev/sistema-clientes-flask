@@ -5,6 +5,8 @@ Sistema web desenvolvido para gerenciamento de clientes, permitindo cadastrar, p
 Este projeto foi desenvolvido como parte dos meus estudos de desenvolvimento web com Python, Flask e MySQL.
 ## 📸 Tela do Sistema
 
+⏳ O primeiro acesso pode demorar 1 minuto ou mais. O projeto usa o plano gratuito do Render, que "adormece" os serviços após 15 minutos sem uso, e cada microsserviço acorda separadamente. Depois disso, tudo responde normalmente.
+
 ![Sistema de Clientes](screenshots/sistema-clientes.png)
 
 ## 🚀 Funcionalidades
