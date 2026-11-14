@@ -40,12 +40,15 @@ def conectar():
 def executar_sql(sql, parametros=None):
     db = conectar()
     cursor = db.cursor()
-    cursor.execute(sql, parametros or ())
-    db.commit()
-    ultimo_id = cursor.lastrowid
-    cursor.close()
-    db.close()
-    return ultimo_id
+    try:
+        cursor.execute(sql, parametros or ())
+        db.commit()
+        return cursor.lastrowid
+    finally:
+        # Sem isso, um INSERT recusado (ex.: CPF duplicado) deixava a transação
+        # aberta segurando o lock da tabela e o DROP do próximo teste travava.
+        cursor.close()
+        db.close()
 
 
 def consultar_um(sql, parametros=None):
@@ -64,6 +67,8 @@ def banco_limpo():
 
     db = conectar()
     cursor = db.cursor()
+    # Uma conexão esquecida com transação aberta faz o DROP falhar em vez de travar
+    cursor.execute("SET SESSION lock_wait_timeout = 30")
 
     for tabela in ("tentativas_acesso", "historico_exclusoes", "clientes", "usuarios"):
         cursor.execute(f"DROP TABLE IF EXISTS {tabela}")
