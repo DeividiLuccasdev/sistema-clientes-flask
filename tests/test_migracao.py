@@ -91,3 +91,35 @@ def test_migracao_falha_sem_apagar_nada_quando_ha_cpf_repetido():
 
     assert erro.value.errno == 1062
     assert consultar_um("SELECT COUNT(*) AS total FROM clientes")["total"] == 2
+
+
+def test_executor_aplica_pendentes_uma_vez_so():
+    import migrar
+
+    executar_sql("DROP TABLE IF EXISTS schema_migracoes")
+    preparar_banco_antigo(["111.111.111-11"])
+
+    assert migrar.migrar(log=lambda _: None) == ["001_concorrencia_idempotencia.sql"]
+    assert consultar_um("SELECT versao FROM clientes")["versao"] == 0
+    # Segunda subida do servidor: nada a fazer
+    assert migrar.migrar(log=lambda _: None) == []
+
+
+def test_executor_so_registra_quando_o_banco_ja_tem_o_schema_atual():
+    import migrar
+
+    executar_sql("DROP TABLE IF EXISTS schema_migracoes")
+
+    assert migrar.migrar(log=lambda _: None) == []
+    assert consultar_um("SELECT COUNT(*) AS total FROM schema_migracoes")["total"] == 1
+
+
+def test_executor_falha_e_nao_registra_quando_ha_cpf_repetido():
+    import migrar
+
+    executar_sql("DROP TABLE IF EXISTS schema_migracoes")
+    preparar_banco_antigo(["111.111.111-11", "11111111111"])
+
+    with pytest.raises(mysql.connector.IntegrityError):
+        migrar.migrar(log=lambda _: None)
+    assert consultar_um("SELECT COUNT(*) AS total FROM schema_migracoes")["total"] == 0
