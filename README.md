@@ -54,6 +54,8 @@ sistema-clientes-flask/
 ├── app.py              # Rotas, autenticação e comando criar-usuario
 ├── schema.sql          # Estrutura do banco
 ├── migracoes/          # Scripts para atualizar bancos já existentes
+├── migrar.py           # Aplica as migrações pendentes (roda ao subir o gunicorn)
+├── gunicorn.conf.py    # Chama migrar.py antes dos workers
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── templates/          # Páginas HTML (Jinja2)
@@ -90,11 +92,13 @@ mysql -u root -p -e "CREATE DATABASE sistema_clientes"
 mysql -u root -p sistema_clientes < schema.sql
 ```
 
-   Se o banco já existia antes da versão com CPF único, aplique a migração (o arquivo explica como achar CPFs repetidos antes):
+   Se o banco já existia antes da versão com CPF único, aplique as migrações pendentes (o arquivo `migracoes/001_*.sql` explica como achar CPFs repetidos antes):
 
 ```bash
-mysql -u root -p sistema_clientes < migracoes/001_concorrencia_idempotencia.sql
+python migrar.py
 ```
+
+   Em produção isso é automático: o `gunicorn.conf.py` roda as migrações pendentes uma vez, antes dos workers, e registra cada uma na tabela `schema_migracoes`. Se uma falhar, o servidor não sobe e a versão anterior continua no ar.
 
 3. Crie o arquivo `.env` a partir do `.env.example`:
 
