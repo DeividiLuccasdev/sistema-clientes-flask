@@ -23,7 +23,8 @@ Este projeto foi desenvolvido como parte dos meus estudos de desenvolvimento web
 - Exclusão com confirmação
 - Pesquisa de clientes
 - Sugestões de nomes durante a pesquisa
-- Validação de CPF duplicado
+- CPF único garantido pelo banco (com ou sem máscara), inclusive em cadastros simultâneos
+- Edição com trava otimista: quem salva com dados desatualizados recebe aviso em vez de sobrescrever
 - Máscaras para CPF, telefone e data de nascimento
 - Registro da data de cadastro
 - Registro de atualizações
@@ -52,10 +53,11 @@ Este projeto foi desenvolvido como parte dos meus estudos de desenvolvimento web
 sistema-clientes-flask/
 ├── app.py              # Rotas, autenticação e comando criar-usuario
 ├── schema.sql          # Estrutura do banco
+├── migracoes/          # Scripts para atualizar bancos já existentes
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── templates/          # Páginas HTML (Jinja2)
-├── static/css/         # Estilos
+├── static/             # Estilos (css/) e scripts (js/)
 └── tests/              # Testes automatizados (pytest)
 ```
 
@@ -64,7 +66,8 @@ sistema-clientes-flask/
 - Senhas armazenadas com hash (Werkzeug) e mínimo de 8 caracteres
 - Proteção CSRF em todos os formulários
 - Cookie de sessão com `HttpOnly`, `SameSite=Lax` e `Secure` em produção
-- Limite de tentativas de login e de recuperação de senha
+- Limite de tentativas de login e de recuperação de senha guardado no MySQL (vale para todos os workers e não é furado por requisições em paralelo)
+- Token de recuperação de senha guardado como hash e de uso único
 - Exclusão de clientes somente por formulário (POST), com confirmação
 - Link de recuperação de senha montado com o endereço de `APP_URL`, sem depender do cabeçalho da requisição
 - Recuperação de senha não revela quais e-mails estão cadastrados
@@ -85,6 +88,12 @@ pip install -r requirements.txt
 ```bash
 mysql -u root -p -e "CREATE DATABASE sistema_clientes"
 mysql -u root -p sistema_clientes < schema.sql
+```
+
+   Se o banco já existia antes da versão com CPF único, aplique a migração (o arquivo explica como achar CPFs repetidos antes):
+
+```bash
+mysql -u root -p sistema_clientes < migracoes/001_concorrencia_idempotencia.sql
 ```
 
 3. Crie o arquivo `.env` a partir do `.env.example`:
@@ -118,6 +127,8 @@ pip install -r requirements-dev.txt
 mysql -u root -p -e "CREATE DATABASE sistema_clientes_teste"
 DB_PASSWORD=sua_senha pytest
 ```
+
+Os testes de `tests/test_concorrencia.py` disparam requisições simultâneas (threads + `threading.Barrier`) para conferir CPF duplicado, exclusão dupla, edição concorrente, limite de login e token de recuperação.
 
 A cada push e pull request, o GitHub Actions executa os testes com um MySQL próprio.
 

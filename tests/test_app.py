@@ -5,7 +5,7 @@ from tests.conftest import SENHA, consultar_um, criar_cliente
 def dados_cliente(**extra):
     dados = {
         "nome": "Maria", "telefone": "", "email": "", "cpf": "111.111.111-11",
-        "cidade": "", "data_nascimento": "01/01/1990",
+        "cidade": "", "data_nascimento": "01/01/1990", "versao": "0",
     }
     dados.update(extra)
     return dados
