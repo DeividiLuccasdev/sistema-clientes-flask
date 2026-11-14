@@ -40,12 +40,15 @@ def conectar():
 def executar_sql(sql, parametros=None):
     db = conectar()
     cursor = db.cursor()
-    cursor.execute(sql, parametros or ())
-    db.commit()
-    ultimo_id = cursor.lastrowid
-    cursor.close()
-    db.close()
-    return ultimo_id
+    try:
+        cursor.execute(sql, parametros or ())
+        db.commit()
+        return cursor.lastrowid
+    finally:
+        # Sem isso, um INSERT recusado (ex.: CPF duplicado) deixava a transação
+        # aberta segurando o lock da tabela e o DROP do próximo teste travava.
+        cursor.close()
+        db.close()
 
 
 def consultar_um(sql, parametros=None):
@@ -60,12 +63,14 @@ def consultar_um(sql, parametros=None):
 
 @pytest.fixture(autouse=True)
 def banco_limpo():
-    """Recria as tabelas a partir do schema.sql e zera os limites de tentativas."""
+    """Recria as tabelas a partir do schema.sql (inclusive os limites de tentativas)."""
 
     db = conectar()
     cursor = db.cursor()
+    # Uma conexão esquecida com transação aberta faz o DROP falhar em vez de travar
+    cursor.execute("SET SESSION lock_wait_timeout = 30")
 
-    for tabela in ("historico_exclusoes", "clientes", "usuarios"):
+    for tabela in ("tentativas_acesso", "historico_exclusoes", "clientes", "usuarios"):
         cursor.execute(f"DROP TABLE IF EXISTS {tabela}")
 
     for comando in (RAIZ / "schema.sql").read_text(encoding="utf-8").split(";"):
@@ -77,8 +82,6 @@ def banco_limpo():
     cursor.close()
     db.close()
 
-    modulo.tentativas_login.clear()
-    modulo.tentativas_recuperacao.clear()
     yield
 
 
@@ -116,6 +119,15 @@ def usuario():
         ("Admin", "admin", "admin@exemplo.com", generate_password_hash(SENHA)),
     )
     return {"usuario": "admin", "email": "admin@exemplo.com"}
+
+
+def novo_logado():
+    """Outro navegador já autenticado (cada um com sua sessão e conexão)."""
+
+    cliente = Cliente()
+    resposta = cliente.post("/login", data={"usuario": "admin", "senha": SENHA})
+    assert resposta.status_code == 302
+    return cliente
 
 
 @pytest.fixture

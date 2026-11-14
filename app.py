@@ -1,28 +1,29 @@
+import hashlib
 import os
-
+import re
 import secrets
-
 import time
-
 from datetime import datetime, timedelta
-
 from functools import wraps
 
-
-
 import click
-
 import mysql.connector
-
 from dotenv import load_dotenv
-
-from flask import Flask, abort, g, redirect, render_template, request, session, url_for
-
+from flask import (
+    Flask,
+    abort,
+    flash,
+    g,
+    get_flashed_messages,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from mysql.connector import errorcode
 from werkzeug.middleware.proxy_fix import ProxyFix
-
 from werkzeug.security import check_password_hash, generate_password_hash
-
-
 
 load_dotenv(override=True)
 
@@ -70,15 +71,6 @@ app.config.update(
 
 )
 
-
-
-# Rate limit simples em memória. Em uma aplicação com múltiplas instâncias,
-
-# substitua por Redis ou outro armazenamento compartilhado.
-
-tentativas_login = {}
-
-tentativas_recuperacao = {}
 
 
 
@@ -278,39 +270,90 @@ def obter_ip_cliente():
 
 
 
-def esta_bloqueado(registro, chave, limite=5, janela_segundos=900):
+LIMITE_TENTATIVAS = 5
 
-    agora = time.time()
-
-    eventos = [
-
-        instante
-
-        for instante in registro.get(chave, [])
-
-        if agora - instante < janela_segundos
-
-    ]
-
-    registro[chave] = eventos
-
-    return len(eventos) >= limite
+JANELA_TENTATIVAS_SEGUNDOS = 900
 
 
+def chave_limite(*partes):
+    # Hash para caber na coluna (o usuário digitado não tem tamanho máximo)
+    # e para não gravar IP/usuário em texto puro.
+    return hashlib.sha256(":".join(partes).encode()).hexdigest()
 
 
+def registrar_tentativa(chave, janela_segundos=JANELA_TENTATIVAS_SEGUNDOS):
+    """Conta mais uma tentativa para a chave e devolve o total na janela atual.
 
-def registrar_tentativa(registro, chave):
+    A contagem fica no MySQL, compartilhada entre workers, e é feita por um
+    único upsert: a linha fica travada até o commit, então requisições
+    simultâneas recebem valores diferentes (1, 2, 3...) e o limite não é
+    furado. A tentativa é registrada antes de conferir a senha.
+    """
 
-    registro.setdefault(chave, []).append(time.time())
+    db = obter_conexao()
+
+    for tentativa in range(3):
+        cursor = db.cursor()
+
+        try:
+            cursor.execute(
+                """
+                INSERT INTO tentativas_acesso (chave, tentativas, janela_inicio)
+                VALUES (%s, 1, NOW())
+                ON DUPLICATE KEY UPDATE
+                    tentativas = IF(
+                        janela_inicio <= NOW() - INTERVAL %s SECOND, 1, tentativas + 1
+                    ),
+                    janela_inicio = IF(
+                        janela_inicio <= NOW() - INTERVAL %s SECOND, NOW(), janela_inicio
+                    )
+                """,
+                (chave, janela_segundos, janela_segundos),
+            )
+            cursor.execute(
+                "SELECT tentativas FROM tentativas_acesso WHERE chave = %s", (chave,)
+            )
+            (tentativas,) = cursor.fetchone()
+            db.commit()
+            return tentativas
+        except mysql.connector.Error as erro:
+            db.rollback()
+            # Vários INSERTs simultâneos da mesma chave nova podem gerar
+            # deadlock no InnoDB; o MySQL desfaz um deles e basta repetir.
+            if erro.errno != errorcode.ER_LOCK_DEADLOCK or tentativa == 2:
+                raise
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            cursor.close()
 
 
+def limpar_tentativas(chave):
+    db = obter_conexao()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("DELETE FROM tentativas_acesso WHERE chave = %s", (chave,))
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        cursor.close()
 
 
+def hash_token(token):
+    return hashlib.sha256(token.encode()).hexdigest()
 
-def limpar_tentativas(registro, chave):
 
-    registro.pop(chave, None)
+def cpf_somente_digitos(cpf):
+    # Mesma regra da coluna gerada clientes.cpf_digitos
+    return re.sub(r"[^0-9]", "", cpf)
+
+
+def e_duplicidade(erro):
+    return erro.errno == errorcode.ER_DUP_ENTRY
 
 
 
@@ -549,88 +592,49 @@ def inicio():
 
 
 @app.route("/login", methods=["GET", "POST"])
-
 def login():
-
     erro = None
 
-
-
     if request.method == "POST":
-
         usuario = request.form.get("usuario", "").strip()
-
         senha = request.form.get("senha", "")
+        chave = chave_limite("login", obter_ip_cliente(), usuario.lower())
 
-        chave_limite = f"{obter_ip_cliente()}:{usuario.lower()}"
-
-
-
-        if esta_bloqueado(tentativas_login, chave_limite):
-
+        # Conta a tentativa antes de conferir a senha: com "verifica e depois
+        # registra", requisições em paralelo passavam todas pela verificação.
+        if registrar_tentativa(chave) > LIMITE_TENTATIVAS:
             erro = "Muitas tentativas de login. Tente novamente em alguns minutos."
-
             return render_template("login.html", erro=erro), 429
 
-
-
         db = obter_conexao()
-
         cursor = db.cursor(dictionary=True)
 
-
-
         try:
-
             cursor.execute(
-
                 "SELECT * FROM usuarios WHERE usuario = %s AND ativo = TRUE",
-
                 (usuario,),
-
             )
-
             dados_usuario = cursor.fetchone()
-
         finally:
-
             cursor.close()
 
-
-
         if (
-
             dados_usuario
-
             and dados_usuario.get("senha")
-
             and check_password_hash(dados_usuario["senha"], senha)
-
         ):
-
-            limpar_tentativas(tentativas_login, chave_limite)
-
+            limpar_tentativas(chave)
             session.clear()
-
             session.permanent = True
-
             session["usuario"] = dados_usuario["usuario"]
-
             session["nome"] = dados_usuario["nome"]
-
             gerar_csrf_token()
-
             return redirect(url_for("inicio"))
-
-
-
-        registrar_tentativa(tentativas_login, chave_limite)
 
         erro = "Usuário ou senha inválidos"
 
-
-
     return render_template("login.html", erro=erro)
+
 
 
 
@@ -665,345 +669,198 @@ def montar_link_publico(caminho):
 
 
 @app.route("/esqueci-senha", methods=["GET", "POST"])
-
 def esqueci_senha():
-
     mensagem = None
-
     erro = None
 
-
-
     if request.method == "POST":
+        chave = chave_limite("recuperacao", obter_ip_cliente())
 
-        chave_limite = obter_ip_cliente()
-
-
-
-        if esta_bloqueado(tentativas_recuperacao, chave_limite):
-
+        if registrar_tentativa(chave) > LIMITE_TENTATIVAS:
             erro = "Muitas solicitações. Tente novamente em alguns minutos."
-
             return render_template(
-
                 "esqueci_senha.html", mensagem=mensagem, erro=erro
-
             ), 429
 
-
-
-        registrar_tentativa(tentativas_recuperacao, chave_limite)
-
         email = request.form.get("email", "").strip().lower()
-
         db = obter_conexao()
-
         cursor = db.cursor(dictionary=True)
 
-
-
         try:
-
             cursor.execute(
-
                 """
-
                 SELECT id, nome, usuario, email
-
                 FROM usuarios
-
                 WHERE email = %s AND ativo = TRUE
-
                 """,
-
                 (email,),
-
             )
-
             usuario = cursor.fetchone()
-
         finally:
-
             cursor.close()
 
-
-
         if usuario:
-
             token = secrets.token_urlsafe(32)
-
-            expiracao = datetime.now() + timedelta(minutes=30)
-
             cursor = db.cursor()
 
-
-
             try:
-
+                # Só o hash do token vai para o banco. A expiração usa o relógio
+                # do MySQL, o mesmo que valida o token depois.
                 cursor.execute(
-
                     """
-
                     UPDATE usuarios
-
                     SET token_recuperacao = %s,
-
-                        token_expiracao = %s
-
+                        token_expiracao = NOW() + INTERVAL 30 MINUTE
                     WHERE id = %s
-
                     """,
-
-                    (token, expiracao, usuario["id"]),
-
+                    (hash_token(token), usuario["id"]),
                 )
-
                 db.commit()
-
+            except Exception:
+                db.rollback()
+                raise
             finally:
-
                 cursor.close()
 
-
-
-            link = montar_link_publico(
-                url_for("redefinir_senha", token=token)
-            )
-
-
+            link = montar_link_publico(url_for("redefinir_senha", token=token))
 
             try:
-
                 enviar_email_recuperacao(usuario["email"], link)
-
             except Exception:
-
                 app.logger.exception("Falha ao enviar e-mail de recuperação")
 
-
-
         mensagem = (
-
             "Se o e-mail estiver cadastrado, você receberá as instruções "
-
             "para redefinição da senha."
-
         )
 
-
-
     return render_template(
-
         "esqueci_senha.html",
-
         mensagem=mensagem,
-
         erro=erro,
-
     )
 
 
-
+LINK_INVALIDO = ("Link inválido ou expirado.", 400)
 
 
 @app.route("/redefinir-senha/<token>", methods=["GET", "POST"])
-
 def redefinir_senha(token):
-
+    token_hash = hash_token(token)
     db = obter_conexao()
-
     cursor = db.cursor(dictionary=True)
 
-
-
     try:
-
         cursor.execute(
-
             """
-
-            SELECT id, usuario, token_expiracao
-
+            SELECT id
             FROM usuarios
-
             WHERE token_recuperacao = %s
-
+              AND token_expiracao > NOW()
             """,
-
-            (token,),
-
+            (token_hash,),
         )
-
         usuario = cursor.fetchone()
-
     finally:
-
         cursor.close()
 
-
-
-    if not usuario or not usuario.get("token_expiracao"):
-
-        return "Link inválido ou expirado.", 400
-
-
-
-    if usuario["token_expiracao"] < datetime.now():
-
-        return "Link inválido ou expirado.", 400
-
-
+    if not usuario:
+        return LINK_INVALIDO
 
     erro = None
 
-
-
     if request.method == "POST":
-
         senha = request.form.get("senha", "")
-
         confirmar_senha = request.form.get("confirmar_senha", "")
 
-
-
         if senha != confirmar_senha:
-
             erro = "As senhas não coincidem."
-
         elif len(senha) < 8:
-
             erro = "A senha deve ter pelo menos 8 caracteres."
-
         else:
-
-            senha_hash = generate_password_hash(senha)
-
             cursor = db.cursor()
 
-
-
             try:
-
+                # Consome o token na mesma instrução que troca a senha: se duas
+                # requisições chegarem juntas, só uma encontra o token válido.
                 cursor.execute(
-
                     """
-
                     UPDATE usuarios
-
                     SET senha = %s,
-
                         token_recuperacao = NULL,
-
                         token_expiracao = NULL
-
                     WHERE id = %s
-
+                      AND token_recuperacao = %s
+                      AND token_expiracao > NOW()
                     """,
-
-                    (senha_hash, usuario["id"]),
-
+                    (generate_password_hash(senha), usuario["id"], token_hash),
                 )
-
+                consumido = cursor.rowcount == 1
                 db.commit()
-
+            except Exception:
+                db.rollback()
+                raise
             finally:
-
                 cursor.close()
 
-
+            if not consumido:
+                return LINK_INVALIDO
 
             return redirect(url_for("login"))
-
-
 
     return render_template("redefinir_senha.html", erro=erro)
 
 
-
-
-
 @app.route("/novo-usuario", methods=["GET", "POST"])
-
 @login_required
-
 def novo_usuario():
-
-    mensagem = None
-
     erro = None
 
-
-
     if request.method == "POST":
-
         nome = request.form.get("nome", "").strip()
-
         usuario = request.form.get("usuario", "").strip()
-
         email = request.form.get("email", "").strip().lower()
-
         senha = request.form.get("senha", "")
 
-
-
         if len(senha) < 8:
-
             erro = "A senha deve ter pelo menos 8 caracteres."
-
         else:
-
             senha_hash = generate_password_hash(senha)
-
             db = obter_conexao()
-
             cursor = db.cursor()
 
-
-
             try:
-
                 cursor.execute(
-
                     """
-
                     INSERT INTO usuarios (nome, usuario, email, senha, ativo)
-
                     VALUES (%s, %s, %s, %s, TRUE)
-
                     """,
-
                     (nome, usuario, email, senha_hash),
-
                 )
-
                 db.commit()
-
-                mensagem = "Usuário cadastrado com sucesso."
-
-            except mysql.connector.IntegrityError:
-
+            except mysql.connector.IntegrityError as falha:
                 db.rollback()
-
+                if not e_duplicidade(falha):
+                    raise
                 erro = "Usuário ou e-mail já cadastrado."
-
+            except Exception:
+                db.rollback()
+                raise
             finally:
-
                 cursor.close()
 
+            if not erro:
+                # Post/Redirect/Get: recarregar a página não reenvia o cadastro
+                flash("Usuário cadastrado com sucesso.")
+                return redirect(url_for("novo_usuario"))
 
+    mensagens = get_flashed_messages()
 
     return render_template(
-
         "novo_usuario.html",
-
-        mensagem=mensagem,
-
+        mensagem=mensagens[0] if mensagens else None,
         erro=erro,
-
     )
-
-
-
 
 
 @app.route("/novo", methods=["GET", "POST"])
@@ -1017,63 +874,46 @@ def novo_cliente():
         cidade = request.form.get("cidade", "").strip()
         data_nascimento = request.form.get("data_nascimento", "").strip()
 
+        def formulario_com_erro(erro):
+            return render_template(
+                "novo_cliente.html",
+                erro=erro,
+                nome=nome,
+                telefone=telefone,
+                email=email,
+                cpf=cpf,
+                cidade=cidade,
+                data_nascimento=data_nascimento,
+            )
+
         try:
             data_nascimento_obj = datetime.strptime(
                 data_nascimento,
                 "%d/%m/%Y",
             ).date()
         except ValueError:
-            return render_template(
-                "novo_cliente.html",
-                erro="Data de nascimento inválida. Use o formato DD/MM/AAAA.",
-                nome=nome,
-                telefone=telefone,
-                email=email,
-                cpf=cpf,
-                cidade=cidade,
-                data_nascimento=data_nascimento,
+            return formulario_com_erro(
+                "Data de nascimento inválida. Use o formato DD/MM/AAAA."
             )
 
         if data_nascimento_obj > datetime.now().date():
-            return render_template(
-                "novo_cliente.html",
-                erro="A data de nascimento não pode ser futura.",
-                nome=nome,
-                telefone=telefone,
-                email=email,
-                cpf=cpf,
-                cidade=cidade,
-                data_nascimento=data_nascimento,
-            )
+            return formulario_com_erro("A data de nascimento não pode ser futura.")
 
         data_nascimento_mysql = data_nascimento_obj.strftime("%Y-%m-%d")
-        cpf_limpo = cpf.replace(".", "").replace("-", "")
+        erro_cpf = "Já existe um cliente cadastrado com esse CPF!"
 
         db = obter_conexao()
         cursor = db.cursor(dictionary=True)
 
         try:
+            # Consulta prévia só para a mensagem amigável no caso comum. Quem
+            # garante a unicidade é o índice UNIQUE de clientes.cpf_digitos.
             cursor.execute(
-                """
-                SELECT id
-                FROM clientes
-                WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = %s
-                """,
-                (cpf_limpo,),
+                "SELECT id FROM clientes WHERE cpf_digitos = %s",
+                (cpf_somente_digitos(cpf),),
             )
-            cliente_existente = cursor.fetchone()
-
-            if cliente_existente:
-                return render_template(
-                    "novo_cliente.html",
-                    erro="Já existe um cliente cadastrado com esse CPF!",
-                    nome=nome,
-                    telefone=telefone,
-                    email=email,
-                    cpf=cpf,
-                    cidade=cidade,
-                    data_nascimento=data_nascimento,
-                )
+            if cursor.fetchone():
+                return formulario_com_erro(erro_cpf)
 
             cursor.execute(
                 """
@@ -1090,6 +930,15 @@ def novo_cliente():
                 (nome, telefone, email, cpf, cidade, data_nascimento_mysql),
             )
             db.commit()
+        except mysql.connector.IntegrityError as falha:
+            # Outro cadastro com o mesmo CPF entrou entre a consulta e o INSERT
+            db.rollback()
+            if not e_duplicidade(falha):
+                raise
+            return formulario_com_erro(erro_cpf)
+        except Exception:
+            db.rollback()
+            raise
         finally:
             cursor.close()
 
@@ -1099,55 +948,55 @@ def novo_cliente():
 
 
 @app.route("/excluir/<int:id>", methods=["POST"])
-
 @login_required
-
 def excluir_cliente(id):
-
     db = obter_conexao()
-
     cursor = db.cursor(dictionary=True)
 
-
-
     try:
-
-        cursor.execute("SELECT id, nome FROM clientes WHERE id = %s", (id,))
-
+        # FOR UPDATE trava a linha: uma segunda exclusão simultânea espera esta
+        # terminar, não encontra mais o cliente e não grava outro histórico.
+        cursor.execute(
+            "SELECT id, nome FROM clientes WHERE id = %s FOR UPDATE", (id,)
+        )
         cliente = cursor.fetchone()
 
-
-
         if cliente:
-
-            cursor.execute(
-
-                """
-
-                INSERT INTO historico_exclusoes (cliente_id, nome)
-
-                VALUES (%s, %s)
-
-                """,
-
-                (cliente["id"], cliente["nome"]),
-
-            )
-
             cursor.execute("DELETE FROM clientes WHERE id = %s", (id,))
 
-            db.commit()
+            if cursor.rowcount == 1:
+                cursor.execute(
+                    """
+                    INSERT INTO historico_exclusoes (cliente_id, nome)
+                    VALUES (%s, %s)
+                    """,
+                    (cliente["id"], cliente["nome"]),
+                )
 
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     finally:
-
         cursor.close()
-
-
 
     return redirect(url_for("inicio"))
 
 
+def buscar_cliente(db, id):
+    cursor = db.cursor(dictionary=True)
 
+    try:
+        cursor.execute("SELECT * FROM clientes WHERE id = %s", (id,))
+        return cursor.fetchone()
+    finally:
+        cursor.close()
+
+
+ERRO_CONFLITO_EDICAO = (
+    "Este cliente foi alterado por outra pessoa enquanto você editava. "
+    "Os dados atuais foram carregados abaixo; revise e salve novamente."
+)
 
 
 @app.route("/editar/<int:id>", methods=["GET", "POST"])
@@ -1155,94 +1004,82 @@ def excluir_cliente(id):
 def editar_cliente(id):
     db = obter_conexao()
 
-    if request.method == "POST":
-        nome = request.form.get("nome", "").strip()
-        telefone = request.form.get("telefone", "").strip()
-        email = request.form.get("email", "").strip().lower()
-        cpf = request.form.get("cpf", "").strip()
-        cidade = request.form.get("cidade", "").strip()
-        data_nascimento = request.form.get("data_nascimento", "").strip()
+    if request.method == "GET":
+        cliente = buscar_cliente(db, id)
 
-        try:
-            data_nascimento_obj = datetime.strptime(
-                data_nascimento,
-                "%d/%m/%Y",
-            ).date()
-        except ValueError:
-            cursor = db.cursor(dictionary=True)
-            try:
-                cursor.execute("SELECT * FROM clientes WHERE id = %s", (id,))
-                cliente = cursor.fetchone()
-            finally:
-                cursor.close()
+        if not cliente:
+            abort(404)
 
-            if not cliente:
-                abort(404)
+        return render_template("editar_cliente.html", cliente=cliente)
 
-            cliente.update(
-                {
-                    "nome": nome,
-                    "telefone": telefone,
-                    "email": email,
-                    "cpf": cpf,
-                    "cidade": cidade,
-                }
-            )
+    campos = {
+        "nome": request.form.get("nome", "").strip(),
+        "telefone": request.form.get("telefone", "").strip(),
+        "email": request.form.get("email", "").strip().lower(),
+        "cpf": request.form.get("cpf", "").strip(),
+        "cidade": request.form.get("cidade", "").strip(),
+    }
+    data_nascimento = request.form.get("data_nascimento", "").strip()
 
-            return render_template(
-                "editar_cliente.html",
-                cliente=cliente,
-                erro="Data de nascimento inválida. Use DD/MM/AAAA.",
-            )
+    try:
+        versao = int(request.form.get("versao", ""))
+    except ValueError:
+        versao = None
 
-        if data_nascimento_obj > datetime.now().date():
-            cliente = {
-                "id": id,
-                "nome": nome,
-                "telefone": telefone,
-                "email": email,
-                "cpf": cpf,
-                "cidade": cidade,
-                "data_nascimento": data_nascimento_obj,
-            }
-            return render_template(
-                "editar_cliente.html",
-                cliente=cliente,
-                erro="A data de nascimento não pode ser futura.",
-            )
+    def formulario_com_erro(erro, data_nascimento_obj=None):
+        # Mantém o que a pessoa digitou e a versão que ela estava editando
+        cliente = buscar_cliente(db, id)
 
-        data_nascimento_mysql = data_nascimento_obj.strftime("%Y-%m-%d")
-        cpf_limpo = cpf.replace(".", "").replace("-", "")
-        cursor = db.cursor(dictionary=True)
+        if not cliente:
+            abort(404)
 
-        try:
-            cursor.execute(
-                """
-                SELECT id
-                FROM clientes
-                WHERE REPLACE(REPLACE(cpf, '.', ''), '-', '') = %s
-                  AND id <> %s
-                """,
-                (cpf_limpo, id),
-            )
-            cliente_com_mesmo_cpf = cursor.fetchone()
+        cliente.update(campos)
+        cliente["versao"] = versao
+        if data_nascimento_obj:
+            cliente["data_nascimento"] = data_nascimento_obj
 
-            if cliente_com_mesmo_cpf:
-                cliente = {
-                    "id": id,
-                    "nome": nome,
-                    "telefone": telefone,
-                    "email": email,
-                    "cpf": cpf,
-                    "cidade": cidade,
-                    "data_nascimento": data_nascimento_obj,
-                }
-                return render_template(
-                    "editar_cliente.html",
-                    cliente=cliente,
-                    erro="Já existe outro cliente cadastrado com esse CPF!",
-                )
+        return render_template("editar_cliente.html", cliente=cliente, erro=erro)
 
+    def conflito():
+        cliente = buscar_cliente(db, id)
+
+        if not cliente:
+            abort(404)
+
+        return render_template(
+            "editar_cliente.html", cliente=cliente, erro=ERRO_CONFLITO_EDICAO
+        ), 409
+
+    if versao is None:
+        return conflito()
+
+    try:
+        data_nascimento_obj = datetime.strptime(
+            data_nascimento,
+            "%d/%m/%Y",
+        ).date()
+    except ValueError:
+        return formulario_com_erro("Data de nascimento inválida. Use DD/MM/AAAA.")
+
+    if data_nascimento_obj > datetime.now().date():
+        return formulario_com_erro(
+            "A data de nascimento não pode ser futura.", data_nascimento_obj
+        )
+
+    erro_cpf = "Já existe outro cliente cadastrado com esse CPF!"
+    cursor = db.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            "SELECT id FROM clientes WHERE cpf_digitos = %s AND id <> %s",
+            (cpf_somente_digitos(campos["cpf"]), id),
+        )
+        cpf_em_uso = cursor.fetchone() is not None
+
+        atualizado = False
+        if not cpf_em_uso:
+            # Trava otimista: só grava se ninguém salvou desde que o formulário
+            # foi aberto. Sem isso, a última gravação apagava a anterior.
             cursor.execute(
                 """
                 UPDATE clientes
@@ -1252,36 +1089,44 @@ def editar_cliente(id):
                     cpf = %s,
                     cidade = %s,
                     data_nascimento = %s,
-                    data_atualizacao = CURRENT_TIMESTAMP
-                WHERE id = %s
+                    data_atualizacao = CURRENT_TIMESTAMP,
+                    versao = versao + 1
+                WHERE id = %s AND versao = %s
                 """,
                 (
-                    nome,
-                    telefone,
-                    email,
-                    cpf,
-                    cidade,
-                    data_nascimento_mysql,
+                    campos["nome"],
+                    campos["telefone"],
+                    campos["email"],
+                    campos["cpf"],
+                    campos["cidade"],
+                    data_nascimento_obj.strftime("%Y-%m-%d"),
                     id,
+                    versao,
                 ),
             )
-            db.commit()
-        finally:
-            cursor.close()
+            atualizado = cursor.rowcount == 1
 
-        return redirect(url_for("inicio"))
-
-    cursor = db.cursor(dictionary=True)
-    try:
-        cursor.execute("SELECT * FROM clientes WHERE id = %s", (id,))
-        cliente = cursor.fetchone()
+        db.commit()
+    except mysql.connector.IntegrityError as falha:
+        # Outro cliente recebeu este CPF entre a consulta e o UPDATE
+        db.rollback()
+        if not e_duplicidade(falha):
+            raise
+        cpf_em_uso = True
+    except Exception:
+        db.rollback()
+        raise
     finally:
         cursor.close()
 
-    if not cliente:
-        abort(404)
+    if cpf_em_uso:
+        return formulario_com_erro(erro_cpf, data_nascimento_obj)
 
-    return render_template("editar_cliente.html", cliente=cliente)
+    if not atualizado:
+        # Versão diferente (alguém salvou antes) ou cliente excluído (404)
+        return conflito()
+
+    return redirect(url_for("inicio"))
 
 
 # CRIAR USUÁRIO PELO TERMINAL
