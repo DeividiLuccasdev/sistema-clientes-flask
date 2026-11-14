@@ -25,6 +25,8 @@ from mysql.connector import errorcode
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from usuario_demo import eh_usuario_demo
+
 load_dotenv(override=True)
 
 
@@ -699,7 +701,9 @@ def esqueci_senha():
         finally:
             cursor.close()
 
-        if usuario:
+        # A conta de demonstração é pública: ninguém recebe link para trocar
+        # a senha dela. A resposta é a mesma de um e-mail não cadastrado.
+        if usuario and not eh_usuario_demo(usuario["usuario"], usuario["email"]):
             token = secrets.token_urlsafe(32)
             cursor = db.cursor()
 
@@ -742,6 +746,7 @@ def esqueci_senha():
 
 
 LINK_INVALIDO = ("Link inválido ou expirado.", 400)
+DEMO_PROTEGIDA = ("A senha da conta de demonstração não pode ser alterada.", 403)
 
 
 @app.route("/redefinir-senha/<token>", methods=["GET", "POST"])
@@ -753,7 +758,7 @@ def redefinir_senha(token):
     try:
         cursor.execute(
             """
-            SELECT id
+            SELECT id, usuario, email
             FROM usuarios
             WHERE token_recuperacao = %s
               AND token_expiracao > NOW()
@@ -766,6 +771,9 @@ def redefinir_senha(token):
 
     if not usuario:
         return LINK_INVALIDO
+
+    if eh_usuario_demo(usuario["usuario"], usuario["email"]):
+        return DEMO_PROTEGIDA
 
     erro = None
 
@@ -822,7 +830,11 @@ def novo_usuario():
         email = request.form.get("email", "").strip().lower()
         senha = request.form.get("senha", "")
 
-        if len(senha) < 8:
+        if eh_usuario_demo(usuario, email):
+            # Sem isso, num banco onde a demo ainda não existe, alguém poderia
+            # registrar "demo" com outra senha antes do seed.
+            erro = "Este usuário ou e-mail é reservado para a conta de demonstração."
+        elif len(senha) < 8:
             erro = "A senha deve ter pelo menos 8 caracteres."
         else:
             senha_hash = generate_password_hash(senha)

@@ -12,6 +12,8 @@
 
 [**Demo ao vivo**](https://sistema-clientes-flask-ev90.onrender.com) · [Correções de bugs e segurança](CORRECOES.md) · [Portfólio](https://portfolio-deividi.vercel.app/)
 
+**Acesso de demonstração** · usuário: `demo` (e-mail `demo@example.com`) · senha: `Demo@2026`
+
 <img src="screenshots/sistema-clientes.png" alt="Tela principal do Sistema de Clientes" width="900">
 
 </div>
@@ -176,7 +178,8 @@ sistema-clientes-flask/
 ├── schema.sql          # Estrutura do banco
 ├── migracoes/          # Scripts para atualizar bancos já existentes
 ├── migrar.py           # Aplica as migrações pendentes (roda ao subir o gunicorn)
-├── gunicorn.conf.py    # Chama migrar.py antes dos workers
+├── usuario_demo.py     # Cria/restaura a conta de demonstração no deploy
+├── gunicorn.conf.py    # Chama migrar.py e usuario_demo.py antes dos workers
 ├── requirements.txt
 ├── requirements-dev.txt
 ├── templates/          # Páginas HTML (Jinja2)
@@ -196,6 +199,7 @@ sistema-clientes-flask/
 - Sem `SECRET_KEY` configurada, a aplicação gera uma chave aleatória a cada início e as sessões se perdem ao reiniciar.
 - As migrações só avançam: não há script para desfazer uma migração aplicada.
 - Os testes precisam de um MySQL real; não há banco em memória para rodá-los.
+- A conta de demonstração e os dados da demo são compartilhados: qualquer visitante pode cadastrar, editar ou excluir clientes. A senha, o e-mail e o login da conta `demo` não podem ser trocados, e ela é restaurada a cada deploy.
 
 ## Roadmap
 
